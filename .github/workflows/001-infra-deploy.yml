@@ -1,0 +1,133 @@
+name: 001-infra-deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  LOCATION: "Germany West Central"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  infra-rg:
+    name: infra-rg
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Actions
+        uses: actions/checkout@v2
+
+      - name: "Az CLI login"
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "Create resource groups"
+        run: |
+          az group create --location "${{ env.LOCATION }}" -n rg-mgt-001
+          az group create --location "${{ env.LOCATION }}" -n rg-dev-001
+          az group create --location "${{ env.LOCATION }}" -n rg-tst-001
+          az group create --location "${{ env.LOCATION }}" -n rg-prd-001
+
+  infra-mgt:
+    name: infra-mgt
+    runs-on: ubuntu-latest
+    needs: infra-rg
+    steps:
+      - name: Checkout GitHub Actions
+        uses: actions/checkout@v2
+
+      - name: "Az CLI login"
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+      - name: "Create AKS MGT"
+        run: |
+          az aks create \
+            --resource-group rg-mgt-001 \
+            --name aks-mgt-001 \
+            --location "${{ env.LOCATION }}" \
+            --node-count 1 \
+            --node-vm-size Standard_D2s_v5 \
+            --generate-ssh-keys
+            
+  infra-dev:
+    name: infra-dev
+    runs-on: ubuntu-latest
+    needs: infra-rg
+    steps:
+      - name: Checkout GitHub Actions
+        uses: actions/checkout@v2
+
+      - name: "Az CLI login"
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "Create AKS DEV"
+        run: |
+          az aks create \
+            --resource-group rg-dev-001 \
+            --name aks-dev-001 \
+            --location "${{ env.LOCATION }}" \
+            --node-count 1 \
+            --node-vm-size Standard_D2s_v5 \
+            --generate-ssh-keys
+
+  infra-tst:
+    name: infra-tst
+    runs-on: ubuntu-latest
+    needs: infra-rg
+    steps:
+      - name: Checkout GitHub Actions
+        uses: actions/checkout@v2
+
+      - name: "Az CLI login"
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "Create AKS TST"
+        run: |
+          az aks create \
+            --resource-group rg-tst-001 \
+            --name aks-tst-001 \
+            --location "${{ env.LOCATION }}" \
+            --node-count 1 \
+            --node-vm-size Standard_D2s_v5 \
+            --generate-ssh-keys
+            
+  infra-prd:
+    name: infra-prd
+    runs-on: ubuntu-latest
+    needs: infra-rg
+    steps:
+      - name: Checkout GitHub Actions
+        uses: actions/checkout@v2
+
+      - name: "Az CLI login"
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "Create AKS PRD"
+        run: |
+          az aks create \
+            --resource-group rg-prd-001 \
+            --name aks-prd-001 \
+            --location "${{ env.LOCATION }}" \
+            --node-count 1 \
+            --node-vm-size Standard_D2s_v5 \
+            --generate-ssh-keys
